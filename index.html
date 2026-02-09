@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub AI Chat - Pro</title>
+    <title>Universal AI Pro - Multimodal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        body { height: 100dvh; overflow: hidden; font-family: 'Inter', sans-serif; background: #0d1117; color: white; }
+        body { height: 100dvh; overflow: hidden; font-family: 'Inter', sans-serif; background: #0d1117; color: white; margin:0; }
+        #loader { position: fixed; inset: 0; z-index: 9999; background: #0d1117; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s; }
         .prose pre { background: #010409; padding: 1rem; border-radius: 8px; border: 1px solid #30363d; overflow-x: auto; }
-        #loader { position: fixed; inset: 0; z-index: 999; background: #0d1117; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s; }
         .cursor-blink::after { content: '▋'; animation: blink 1s step-end infinite; }
         @keyframes blink { 50% { opacity: 0; } }
     </style>
@@ -18,73 +19,78 @@
 <body class="dark">
 
     <div id="loader">
-        <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p>Initializing Chat...</p>
+        <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-blue-400 font-medium animate-pulse">Adding Vision Capabilities...</p>
     </div>
 
-    <div class="flex h-full">
+    <div class="flex h-full w-full">
         <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-72 bg-[#161b22] border-r border-gray-700 transform -translate-x-full md:translate-x-0 transition-transform flex flex-col">
             <div class="p-4">
-                <button onclick="createNewChat()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-medium transition-all">+ New Chat</button>
+                <button onclick="createNewChat()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold shadow-lg">+ NEW CHAT</button>
             </div>
-            <div id="chat-history-list" class="flex-1 overflow-y-auto px-2 space-y-1"></div>
-            <div class="p-4 border-t border-gray-700">
-                <button onclick="openSettings()" class="w-full text-left p-2 text-gray-400 hover:text-white transition-colors">⚙️ Settings</button>
+            <div id="chat-history-list" class="flex-1 overflow-y-auto px-3 space-y-2"></div>
+            <div class="p-4 border-t border-gray-800">
+                <button onclick="openSettings()" class="w-full flex items-center gap-2 text-gray-400 hover:text-white p-2 rounded-lg">⚙️ Settings</button>
             </div>
         </aside>
 
-        <main class="flex-1 flex flex-col min-w-0 md:ml-72">
-            <header class="p-4 md:hidden border-b border-gray-800 flex items-center">
-                <button onclick="toggleSidebar()" class="text-2xl mr-4">☰</button>
-                <span class="font-bold">GitHub AI</span>
+        <main class="flex-1 flex flex-col min-w-0 md:ml-72 bg-[#0d1117]">
+            <header class="p-4 md:hidden border-b border-gray-800 flex items-center justify-between">
+                <button onclick="toggleSidebar()" class="text-2xl">☰</button>
+                <span class="font-bold">GitHub AI Vision</span>
+                <div class="w-6"></div>
             </header>
 
-            <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-10 space-y-6">
-                </div>
+            <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6"></div>
 
             <div class="p-4">
-                <div class="max-w-4xl mx-auto flex gap-2 bg-[#21262d] p-2 rounded-2xl border border-gray-700">
-                    <textarea id="user-input" rows="1" class="flex-1 bg-transparent border-none focus:ring-0 p-3 outline-none resize-none" placeholder="Type your message..."></textarea>
-                    <button id="send-btn" onclick="handleSend()" class="p-3 bg-blue-600 rounded-xl hover:bg-blue-700 transition-all">➤</button>
+                <div class="max-w-4xl mx-auto">
+                    <div id="preview-box" class="flex flex-wrap gap-2 mb-2 hidden"></div>
+                    
+                    <div class="flex items-end gap-2 bg-[#21262d] p-2 rounded-2xl border border-gray-700 focus-within:border-blue-500 transition-all">
+                        <button onclick="document.getElementById('file-in').click()" class="p-3 text-gray-400 hover:text-white" title="Upload Images or PDFs">📎</button>
+                        <input type="file" id="file-in" class="hidden" multiple accept="image/*,.pdf,.txt" onchange="handleFiles(event)">
+                        
+                        <textarea id="user-input" rows="1" class="flex-1 bg-transparent border-none focus:ring-0 p-3 outline-none resize-none text-white" placeholder="Message AI with images/files..."></textarea>
+                        
+                        <button onclick="handleSend()" id="send-btn" class="p-3 bg-blue-600 rounded-xl hover:bg-blue-700 transition-all">➤</button>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <div id="settings-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/70">
+    <div id="settings-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
         <div class="bg-[#161b22] w-full max-w-md p-6 rounded-2xl border border-gray-700">
-            <h2 class="text-xl font-bold mb-4">Configuration</h2>
+            <h2 class="text-xl font-bold mb-4 text-blue-400">Settings</h2>
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs text-gray-400 mb-1 uppercase">GitHub Token</label>
-                    <input type="password" id="setting-token" class="w-full p-3 bg-black border border-gray-700 rounded-lg outline-none focus:border-blue-500">
+                    <input type="password" id="set-token" class="w-full p-3 bg-black border border-gray-700 rounded-lg outline-none text-blue-400">
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1 uppercase">Model</label>
-                    <input type="text" id="setting-model" value="gpt-4o" class="w-full p-3 bg-black border border-gray-700 rounded-lg outline-none focus:border-blue-500">
+                    <label class="block text-xs text-gray-400 mb-1 uppercase">Model (Use gpt-4o for images)</label>
+                    <input type="text" id="set-model" value="gpt-4o" class="w-full p-3 bg-black border border-gray-700 rounded-lg outline-none">
                 </div>
-                <button onclick="saveSettings()" class="w-full bg-blue-600 py-3 rounded-lg font-bold">Save & Close</button>
+                <button onclick="saveSettings()" class="w-full bg-blue-600 py-3 rounded-lg font-bold">SAVE</button>
             </div>
         </div>
     </div>
 
     <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         let state = { token: "", model: "gpt-4o", chats: [], currentChatId: null };
+        let stagedFiles = []; // {type: 'img'|'txt', content: base64/text, name: string}
 
         function init() {
             try {
-                const saved = localStorage.getItem('gh-pro-chat');
+                const saved = localStorage.getItem('gh-vision-v1');
                 if (saved) state = JSON.parse(saved);
-                
-                if (!state.chats || state.chats.length === 0) {
-                    createNewChat(false);
-                }
-                
+                if (!state.chats || state.chats.length === 0) createNewChat(false);
                 renderSidebar();
                 renderChat();
             } catch (e) { console.error(e); }
             finally { 
-                // FORCE hide loader
                 document.getElementById('loader').style.opacity = '0';
                 setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
             }
@@ -92,48 +98,99 @@
 
         function createNewChat(render = true) {
             const id = Date.now().toString();
-            const newChat = { id, messages: [] };
-            state.chats.unshift(newChat);
+            state.chats.unshift({ id, messages: [] });
             state.currentChatId = id;
             saveState();
             if(render) { renderSidebar(); renderChat(); }
         }
 
-        function renderChat() {
-            const container = document.getElementById('chat-container');
-            if(!container) return;
-            container.innerHTML = '';
-            
-            const chat = state.chats.find(c => c.id === state.currentChatId);
-            if (!chat || chat.messages.length === 0) {
-                container.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-gray-500">
-                    <h1 class="text-3xl font-bold mb-2 text-white">GitHub AI Pro</h1>
-                    <p>Enter your token in settings to start.</p>
-                </div>`;
-                return;
+        async function handleFiles(e) {
+            const files = Array.from(e.target.files);
+            for (const f of files) {
+                if (f.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        stagedFiles.push({ type: 'img', content: ev.target.result, name: f.name });
+                        updateFilePreview();
+                    };
+                    reader.readAsDataURL(f);
+                } else if (f.type.includes('pdf')) {
+                    const doc = await pdfjsLib.getDocument(await f.arrayBuffer()).promise;
+                    let t = "";
+                    for(let i=1; i<=Math.min(doc.numPages, 5); i++) {
+                        const page = await doc.getPage(i);
+                        const content = await page.getTextContent();
+                        t += content.items.map(x => x.str).join(' ') + " ";
+                    }
+                    stagedFiles.push({ type: 'txt', content: t, name: f.name });
+                    updateFilePreview();
+                } else {
+                    stagedFiles.push({ type: 'txt', content: await f.text(), name: f.name });
+                    updateFilePreview();
+                }
             }
-            chat.messages.forEach(m => appendMessageToUI(m.role, m.content));
-            container.scrollTop = container.scrollHeight;
+        }
+
+        function updateFilePreview() {
+            const box = document.getElementById('preview-box');
+            box.innerHTML = '';
+            stagedFiles.length ? box.classList.remove('hidden') : box.classList.add('hidden');
+            stagedFiles.forEach((f, idx) => {
+                const d = document.createElement('div');
+                d.className = "relative group w-16 h-16 bg-[#30363d] rounded-lg overflow-hidden border border-gray-600";
+                if(f.type === 'img') d.innerHTML = `<img src="${f.content}" class="w-full h-full object-cover">`;
+                else d.innerHTML = `<div class="flex items-center justify-center h-full text-[10px] p-1 text-center">${f.name.slice(-8)}</div>`;
+                
+                const del = document.createElement('button');
+                del.className = "absolute top-0 right-0 bg-red-600 text-white text-[10px] px-1 rounded-bl";
+                del.innerText = "X";
+                del.onclick = () => { stagedFiles.splice(idx, 1); updateFilePreview(); };
+                d.appendChild(del);
+                box.appendChild(d);
+            });
         }
 
         async function handleSend() {
             const input = document.getElementById('user-input');
             const text = input.value.trim();
-            if (!text || !state.token) return;
+            if ((!text && stagedFiles.length === 0) || !state.token) return;
 
             const chat = state.chats.find(c => c.id === state.currentChatId);
-            chat.messages.push({ role: 'user', content: text });
+            
+            // Construct Payload
+            let messageContent = [];
+            if (text) messageContent.push({ type: "text", text: text });
+            
+            stagedFiles.forEach(f => {
+                if (f.type === 'img') {
+                    messageContent.push({ type: "image_url", image_url: { url: f.content } });
+                } else {
+                    messageContent[0].text += `\n\n[File Content: ${f.name}]\n${f.content}`;
+                }
+            });
+
+            // Store for History (Simplified display)
+            chat.messages.push({ role: 'user', content: text || "Sent an image/file" });
+            
+            const payloadMessages = [
+                { role: "system", content: "You are a vision-capable assistant." },
+                ...chat.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content })),
+                { role: "user", content: messageContent }
+            ];
+
             input.value = '';
+            stagedFiles = [];
+            updateFilePreview();
             renderChat();
 
-            const aiBox = appendMessageToUI('assistant', '');
+            const aiBox = appendUI('assistant', '');
             aiBox.innerHTML = '<span class="cursor-blink"></span>';
 
             try {
                 const res = await fetch("https://models.inference.ai.azure.com/chat/completions", {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${state.token}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: state.model, messages: chat.messages, stream: true })
+                    body: JSON.stringify({ model: state.model, messages: payloadMessages, stream: true })
                 });
 
                 const reader = res.body.getReader();
@@ -149,8 +206,7 @@
                             const data = line.replace('data: ', '').trim();
                             if (data === '[DONE]') break;
                             try {
-                                const delta = JSON.parse(data).choices[0].delta.content || "";
-                                full += delta;
+                                full += JSON.parse(data).choices[0].delta.content || "";
                                 aiBox.innerHTML = marked.parse(full) + '<span class="cursor-blink"></span>';
                                 document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
                             } catch(e) {}
@@ -164,7 +220,7 @@
             } catch (err) { aiBox.innerHTML = "Error: " + err.message; }
         }
 
-        function appendMessageToUI(role, content) {
+        function appendUI(role, content) {
             const d = document.createElement('div');
             d.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
             const inner = document.createElement('div');
@@ -175,21 +231,38 @@
             return inner;
         }
 
-        function saveState() { localStorage.setItem('gh-pro-chat', JSON.stringify(state)); }
-        function openSettings() { document.getElementById('setting-token').value = state.token; document.getElementById('settings-modal').classList.remove('hidden'); }
-        function saveSettings() { state.token = document.getElementById('setting-token').value; state.model = document.getElementById('setting-model').value; saveState(); document.getElementById('settings-modal').classList.add('hidden'); }
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
+        function renderChat() {
+            const container = document.getElementById('chat-container');
+            container.innerHTML = '';
+            const chat = state.chats.find(c => c.id === state.currentChatId);
+            if (!chat || chat.messages.length === 0) {
+                container.innerHTML = `<div class="h-full flex flex-col items-center justify-center opacity-30 text-center">
+                    <div class="text-7xl mb-4">🖼️</div>
+                    <h2 class="text-2xl font-bold">Vision AI Active</h2>
+                    <p>Upload images or ask questions.</p>
+                </div>`;
+                return;
+            }
+            chat.messages.forEach(m => appendUI(m.role, m.content));
+            container.scrollTop = container.scrollHeight;
+        }
+
         function renderSidebar() {
             const list = document.getElementById('chat-history-list');
             list.innerHTML = '';
             state.chats.forEach(c => {
                 const item = document.createElement('div');
-                item.className = `p-3 rounded-lg cursor-pointer truncate ${c.id === state.currentChatId ? 'bg-[#30363d]' : 'text-gray-400 hover:bg-[#21262d]'}`;
-                item.innerText = c.messages.length > 0 ? c.messages[0].content.slice(0, 20) : "New Chat";
+                item.className = `p-3 rounded-xl cursor-pointer truncate ${c.id === state.currentChatId ? 'bg-[#30363d]' : 'text-gray-400 hover:bg-[#21262d]'}`;
+                item.innerText = c.messages.length ? c.messages[0].content.slice(0, 20) : "New Vision Chat";
                 item.onclick = () => { state.currentChatId = c.id; renderSidebar(); renderChat(); };
                 list.appendChild(item);
             });
         }
+
+        function saveState() { localStorage.setItem('gh-vision-v1', JSON.stringify(state)); }
+        function openSettings() { document.getElementById('set-token').value = state.token; document.getElementById('settings-modal').classList.remove('hidden'); }
+        function saveSettings() { state.token = document.getElementById('set-token').value; state.model = document.getElementById('set-model').value; saveState(); document.getElementById('settings-modal').classList.add('hidden'); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('-translate-x-full'); }
 
         window.onload = init;
     </script>
