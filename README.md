@@ -8,7 +8,7 @@
     👉🏻Open Pro Bot 🤖
   </a>
 </div>
-🤖 AI jo samjhta hai tumhari baat,
-⚡ seconds me accurate answers,
+🤖 AI jo samjhta hai tumhari baat,<br>
+⚡ seconds me accurate answers,<br>
 🧠 productivity + creativity — sab ek jagah.
 </body>
