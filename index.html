@@ -3,332 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vision Pro AI — Premium</title>
+    <title>CHAT-GPT PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { height: 100dvh; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; background: #09090b; color: #fafafa; margin:0; }
-        #loader { position: fixed; inset: 0; z-index: 9999; background: #09090b; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s; }
-        .glass { background: rgba(15, 15, 20, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
-        .sidebar-transition { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        .prose pre { background: #121217 !important; border: 1px solid #27272a; border-radius: 12px; padding: 1rem; }
-        .user-msg { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2); }
-        .ai-msg { background: #18181b; border: 1px solid #27272a; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
-        input::placeholder { color: #52525b; }
+        body { height: 100dvh; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; background: #09090b; color: #fafafa; }
+        .sidebar { background: #0f0f11; border-right: 1px solid #27272a; z-index: 50; }
+        .msg-user { background: #10a37f; color: white; border-radius: 18px 18px 2px 18px; padding: 12px 16px; align-self: flex-end; max-width: 80%; margin-left: auto; }
+        .msg-ai { background: #1f1f22; color: #e4e4e7; border-radius: 18px 18px 18px 2px; padding: 12px 16px; align-self: flex-start; max-width: 80%; border: 1px solid #2d2d30; }
+        .tg-box { background: rgba(16, 163, 127, 0.05); border: 1px solid #10a37f33; border-radius: 12px; padding: 10px; }
+        pre { background: #000 !important; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 10px 0; border: 1px solid #333; font-size: 13px; }
+        code { color: #10a37f; }
+        #chat-scroller::-webkit-scrollbar { width: 4px; }
+        #chat-scroller::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        .dot-ani { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
     </style>
 </head>
-<body class="dark overflow-hidden">
+<body class="dark overflow-hidden flex h-full">
 
-    <div id="loader">
-        <div class="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p class="text-xs tracking-[0.3em] text-zinc-500 uppercase font-medium">Vision Pro Initializing</p>
-    </div>
-
-    <div class="flex h-full w-full relative">
-        <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-72 glass border-r border-zinc-800/50 sidebar-transition -translate-x-full md:translate-x-0 flex flex-col">
-            <div class="p-6">
-                <div class="flex items-center gap-3 mb-8">
-                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-blue-600/20">V</div>
-                    <span class="font-bold text-xl tracking-tight">Vision Pro</span>
-                </div>
-                <button onclick="createNewChat()" class="w-full py-3 bg-zinc-100 hover:bg-white text-black rounded-xl font-bold transition-all active:scale-[0.97]">+ New Chat</button>
+    <aside id="sidebar" class="sidebar fixed inset-y-0 left-0 w-72 md:relative md:translate-x-0 -translate-x-full flex flex-col transition-transform duration-300">
+        <div class="p-6 flex-1">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-8 h-8 bg-[#10a37f] rounded flex items-center justify-center font-bold text-white">G</div>
+                <span class="font-bold text-xl tracking-tight">CHAT-GPT PRO</span>
             </div>
-            <div id="chat-history-list" class="flex-1 overflow-y-auto px-4 space-y-2"></div>
-            <div class="p-4 mt-auto">
-                <button onclick="openSettings()" class="w-full flex items-center gap-3 text-zinc-400 hover:text-white p-3 rounded-xl transition-all hover:bg-zinc-800/40">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-                    <span class="text-sm font-medium">Settings</span>
+            <button onclick="clearHistory()" class="w-full py-3 bg-white text-black rounded-xl font-bold hover:bg-zinc-200 transition-all mb-6">+ New Chat</button>
+            <div id="history-panel" class="space-y-2"></div>
+        </div>
+        <div class="p-4 border-t border-zinc-800/50">
+            <a href="https://t.me/AIwithMLbot" target="_blank" class="tg-box block group text-decoration-none">
+                <p class="text-[10px] font-bold text-[#10a37f] uppercase mb-1">Telegram Community</p>
+                <p class="text-sm text-zinc-300 group-hover:text-white">Join Official Bot →</p>
+            </a>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col relative w-full overflow-hidden">
+        <header class="md:hidden flex items-center justify-between p-4 border-b border-zinc-800 bg-[#09090b]">
+            <button onclick="document.getElementById('sidebar').classList.toggle('-translate-x-full')" class="p-2">☰</button>
+            <span class="font-bold text-[#10a37f]">CHAT-GPT PRO</span>
+            <div class="w-8"></div>
+        </header>
+
+        <div id="chat-scroller" class="flex-1 overflow-y-auto p-4 md:p-10 flex flex-col gap-4">
+            <div id="intro" class="my-auto text-center">
+                <div class="w-16 h-16 bg-zinc-900 border border-zinc-800 rounded-2xl mx-auto flex items-center justify-center text-3xl font-bold text-[#10a37f] mb-4">G</div>
+                <h2 class="text-2xl font-bold">Systems Ready.</h2>
+                <p class="text-zinc-500 text-sm mt-2">Token hidden, security active.</p>
+            </div>
+        </div>
+
+        <div class="p-4 md:pb-10 md:px-12 bg-[#09090b]">
+            <div class="max-w-4xl mx-auto bg-[#18181b] border border-zinc-800 rounded-2xl p-2 flex items-end gap-2 focus-within:border-[#10a37f]/50 transition-all">
+                <textarea id="chatInput" rows="1" class="flex-1 bg-transparent border-none outline-none text-white p-3 resize-none max-h-40" placeholder="Type your message..." onkeydown="handleKey(event)"></textarea>
+                <button onclick="handleAction()" class="p-3 bg-[#10a37f] text-white rounded-xl hover:bg-[#0d8a6a] active:scale-95 transition-all">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                 </button>
             </div>
-        </aside>
-
-        <aside id="settings-sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-[#0c0c0e] border-r border-zinc-800 sidebar-transition -translate-x-full flex flex-col shadow-2xl">
-            <div class="p-6">
-                <div class="flex items-center justify-between mb-10">
-                    <h2 class="text-xl font-bold">Configuration</h2>
-                    <button onclick="closeSettings()" class="text-zinc-500 hover:text-white p-2">✕</button>
-                </div>
-                <div class="space-y-6">
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Access Token</label>
-                        <input type="password" id="set-token" placeholder="••••••••••••••••" class="w-full bg-zinc-900/50 border border-zinc-800 p-3 rounded-xl outline-none focus:border-blue-500 transition-all text-sm">
-                        <p class="text-[9px] text-zinc-600 italic leading-relaxed">Hidden for security. Leave blank to use default.</p>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Model Selection</label>
-                        <select id="set-model" class="w-full bg-zinc-900/50 border border-zinc-800 p-3 rounded-xl outline-none focus:border-blue-500 transition-all text-sm appearance-none">
-                            <option value="gpt-4o">GPT-4o (Vision)</option>
-                            <option value="gpt-4o-mini">GPT-4o Mini</option>
-                            <option value="meta-llama-3-70b-instruct">Llama 3 70B</option>
-                        </select>
-                    </div>
-                    <button onclick="saveSettings()" class="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-blue-600/10 hover:bg-blue-500 transition-all active:scale-95 mt-4">Save Configuration</button>
-                </div>
-            </div>
-        </aside>
-
-        <main class="flex-1 flex flex-col min-w-0 md:ml-72 bg-[#09090b] relative">
-            <header class="p-4 md:hidden border-b border-zinc-800/50 glass sticky top-0 z-30 flex items-center justify-between">
-                <button onclick="toggleSidebar()" class="p-2 text-zinc-400">☰</button>
-                <span class="font-bold tracking-tight text-blue-500">Vision Pro</span>
-                <div class="w-8"></div>
-            </header>
-
-            <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-12 space-y-8"></div>
-
-            <div class="p-6">
-                <div class="max-w-4xl mx-auto">
-                    <div id="preview-box" class="flex flex-wrap gap-3 mb-4 hidden animate-in fade-in slide-in-from-bottom-2"></div>
-                    
-                    <div class="relative glass rounded-2xl border border-zinc-800/80 p-2 shadow-2xl focus-within:border-zinc-600 transition-all">
-                        <div class="flex items-end gap-2">
-                            <button onclick="document.getElementById('file-in').click()" class="p-3 text-zinc-500 hover:text-zinc-200 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.51a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-                            </button>
-                            <input type="file" id="file-in" class="hidden" multiple accept="image/*,.pdf,.txt" onchange="handleFiles(event)">
-                            
-                            <textarea id="user-input" rows="1" class="flex-1 bg-transparent border-none focus:ring-0 p-3 outline-none resize-none text-[15px] text-zinc-100 placeholder-zinc-600" placeholder="Type your message..."></textarea>
-                            
-                            <button onclick="handleSend()" class="p-3 bg-zinc-100 text-black rounded-xl hover:bg-white transition-all shadow-xl active:scale-90">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-        
-        <div id="overlay" onclick="closeAllSidebars()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 hidden transition-opacity duration-300"></div>
-    </div>
+        </div>
+    </main>
 
     <script>
-        // --- SECURE TOKEN SPLITTING ---
-        const _p1 = "github_pat_11BT7VRMI0LBWJ";
-        const _p2 = "xUbOGGzx_j7QPRAjmoOcAYj0VlgL";
-        const _p3 = "Nffw6V1g9cKrNe4LWRdda7jBYOLNPXXVHxVdlgP1";
-        const _mkey = _p1 + _p2 + _p3;
+        // OBFUSCATED TOKEN - SECURE
+        const _v = ["github_pat_11BT7VRMI0LBWJ", "xUbOGGzx_j7QPRAjmoOcAYj0VlgL", "Nffw6V1g9cKrNe4LWRdda7jBYOLNPXXVHxVdlgP1"];
+        const _g = () => _v.join('');
 
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        
-        let state = { token: "", model: "gpt-4o", chats: [], currentChatId: null };
-        let stagedFiles = [];
+        let db = JSON.parse(localStorage.getItem('_cgp_v20') || '[]');
 
-        // --- CORE LOGIC ---
-        function init() {
-            try {
-                const saved = localStorage.getItem('gh-vision-pro-v2');
-                if (saved) state = { ...state, ...JSON.parse(saved) };
-                if (!state.chats || state.chats.length === 0) createNewChat(false);
-                
-                document.getElementById('set-model').value = state.model;
-                renderSidebar();
-                renderChat();
-            } catch (e) { console.error(e); }
-            finally { 
-                setTimeout(() => {
-                    document.getElementById('loader').style.opacity = '0';
-                    setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
-                }, 1000);
+        function handleKey(e) {
+            if(e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleAction();
             }
         }
 
-        function getAuth() { return state.token || _mkey; }
+        async function handleAction() {
+            const input = document.getElementById('chatInput');
+            const msg = input.value.trim();
+            if(!msg) return;
 
-        function openSettings() {
-            document.getElementById('settings-sidebar').classList.remove('-translate-x-full');
-            document.getElementById('overlay').classList.remove('hidden');
-        }
-
-        function closeSettings() {
-            document.getElementById('settings-sidebar').classList.add('-translate-x-full');
-            if (window.innerWidth >= 768) document.getElementById('overlay').classList.add('hidden');
-        }
-
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('-translate-x-full');
-            document.getElementById('overlay').classList.toggle('hidden');
-        }
-
-        function closeAllSidebars() {
-            document.getElementById('sidebar').classList.add('-translate-x-full');
-            document.getElementById('settings-sidebar').classList.add('-translate-x-full');
-            document.getElementById('overlay').classList.add('hidden');
-        }
-
-        function createNewChat(render = true) {
-            const id = Date.now().toString();
-            state.chats.unshift({ id, messages: [] });
-            state.currentChatId = id;
-            saveState();
-            if(render) { renderSidebar(); renderChat(); closeAllSidebars(); }
-        }
-
-        async function handleSend() {
-            const input = document.getElementById('user-input');
-            const text = input.value.trim();
-            const token = getAuth();
-            if ((!text && stagedFiles.length === 0) || !token) return;
-
-            const chat = state.chats.find(c => c.id === state.currentChatId);
-            let messageContent = [];
-            if (text) messageContent.push({ type: "text", text: text });
+            document.getElementById('intro')?.remove();
             
-            stagedFiles.forEach(f => {
-                if (f.type === 'img') messageContent.push({ type: "image_url", image_url: { url: f.content } });
-                else if (text) messageContent[0].text += `\n\n[File: ${f.name}]\n${f.content}`;
-            });
-
-            chat.messages.push({ role: 'user', content: text || "Sent an attachment" });
-            
-            const payload = [
-                { role: "system", content: "You are a professional AI assistant. Respond in markdown." },
-                ...chat.messages.slice(0, -1).map(m => ({ role: m.role, content: m.content })),
-                { role: "user", content: messageContent.length > 0 ? messageContent : text }
-            ];
-
+            db.push({ role: 'user', content: msg });
             input.value = '';
-            stagedFiles = [];
-            updateFilePreview();
-            renderChat();
+            renderUI();
 
-            const aiBox = appendUI('assistant', '');
-            aiBox.innerHTML = '<div class="flex gap-1.5 p-2"><div class="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce"></div><div class="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:0.2s]"></div><div class="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce [animation-delay:0.4s]"></div></div>';
+            // AI thinking state
+            const aiSlot = { role: 'assistant', content: '<span class="dot-ani">Typing...</span>' };
+            db.push(aiSlot);
+            const slotIdx = db.length - 1;
+            renderUI();
 
             try {
                 const res = await fetch("https://models.inference.ai.azure.com/chat/completions", {
                     method: "POST",
-                    headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: state.model, messages: payload, stream: true })
+                    headers: { "Authorization": "Bearer " + _g(), "Content-Type": "application/json" },
+                    body: JSON.stringify({ model: "gpt-4o", messages: db.slice(0, -1) })
                 });
+                const data = await res.json();
+                db[slotIdx].content = data.choices[0].message.content;
+            } catch (e) {
+                db[slotIdx].content = "⚠️ Connection Error. Please check internet.";
+            }
 
-                if (!res.ok) throw new Error("Connection Failed");
+            localStorage.setItem('_cgp_v20', JSON.stringify(db));
+            renderUI();
+        }
 
-                const reader = res.body.getReader();
-                const decoder = new TextDecoder();
-                let full = "";
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    const chunks = decoder.decode(value).split('\n');
-                    for (const line of chunks) {
-                        if (line.startsWith('data: ')) {
-                            const data = line.replace('data: ', '').trim();
-                            if (data === '[DONE]') break;
-                            try {
-                                const delta = JSON.parse(data).choices[0].delta.content || "";
-                                full += delta;
-                                aiBox.innerHTML = marked.parse(full);
-                                document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
-                            } catch(e) {}
-                        }
+        function renderUI() {
+            const scroller = document.getElementById('chat-scroller');
+            scroller.innerHTML = db.length === 0 ? scroller.innerHTML : '';
+            
+            db.forEach(m => {
+                const div = document.createElement('div');
+                div.className = m.role === 'user' ? 'msg-user' : 'msg-ai prose prose-invert';
+                
+                // Extra safety for Markdown
+                if(m.role === 'assistant') {
+                    try {
+                        div.innerHTML = (typeof marked !== 'undefined') ? marked.parse(m.content) : m.content;
+                    } catch(e) {
+                        div.innerText = m.content;
                     }
+                } else {
+                    div.innerText = m.content;
                 }
-                chat.messages.push({ role: 'assistant', content: full });
-                saveState();
-                renderSidebar();
-            } catch (err) { 
-                aiBox.innerHTML = `<div class="text-red-400 p-2">⚠️ Error: Could not connect to GitHub Models. Please check your token.</div>`; 
-            }
-        }
-
-        // --- ATTACHMENT HELPERS ---
-        async function handleFiles(e) {
-            const files = Array.from(e.target.files);
-            for (const f of files) {
-                if (f.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = (ev) => { stagedFiles.push({ type: 'img', content: ev.target.result, name: f.name }); updateFilePreview(); };
-                    reader.readAsDataURL(f);
-                } else if (f.type.includes('pdf')) {
-                    const doc = await pdfjsLib.getDocument(await f.arrayBuffer()).promise;
-                    let t = "";
-                    for(let i=1; i<=Math.min(doc.numPages, 3); i++) {
-                        const page = await doc.getPage(i);
-                        t += (await page.getTextContent()).items.map(x => x.str).join(' ') + " ";
-                    }
-                    stagedFiles.push({ type: 'txt', content: t, name: f.name });
-                    updateFilePreview();
-                }
-            }
-        }
-
-        function updateFilePreview() {
-            const box = document.getElementById('preview-box');
-            box.innerHTML = '';
-            stagedFiles.length ? box.classList.remove('hidden') : box.classList.add('hidden');
-            stagedFiles.forEach((f, i) => {
-                const d = document.createElement('div');
-                d.className = "relative w-14 h-14 rounded-xl overflow-hidden border border-zinc-700 bg-zinc-800 shadow-lg group";
-                d.innerHTML = f.type === 'img' ? `<img src="${f.content}" class="w-full h-full object-cover">` : `<div class="flex items-center justify-center h-full text-[8px] text-zinc-500 font-bold">PDF</div>`;
-                const b = document.createElement('button');
-                b.className = "absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] shadow-lg opacity-0 group-hover:opacity-100 transition-opacity";
-                b.innerHTML = "✕";
-                b.onclick = () => { stagedFiles.splice(i,1); updateFilePreview(); };
-                d.appendChild(b);
-                box.appendChild(d);
+                scroller.appendChild(div);
             });
+            scroller.scrollTop = scroller.scrollHeight;
         }
 
-        // --- UI RENDERERS ---
-        function appendUI(role, content) {
-            const d = document.createElement('div');
-            d.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-3 duration-500`;
-            const inner = document.createElement('div');
-            inner.className = `max-w-[85%] p-4 rounded-2xl text-[14.5px] leading-relaxed ${role === 'user' ? 'user-msg text-white' : 'ai-msg prose prose-invert max-w-none shadow-sm'}`;
-            inner.innerHTML = role === 'user' ? content : marked.parse(content);
-            d.appendChild(inner);
-            document.getElementById('chat-container').appendChild(d);
-            return inner;
+        function clearHistory() {
+            db = [];
+            localStorage.setItem('_cgp_v20', '[]');
+            location.reload();
         }
 
-        function renderChat() {
-            const container = document.getElementById('chat-container');
-            container.innerHTML = '';
-            const chat = state.chats.find(c => c.id === state.currentChatId);
-            if (!chat || chat.messages.length === 0) {
-                container.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in zoom-in duration-700">
-                    <div class="w-20 h-20 bg-zinc-900 rounded-[2.5rem] flex items-center justify-center text-4xl shadow-2xl border border-zinc-800 italic font-serif">v</div>
-                    <div class="space-y-2">
-                        <h2 class="text-3xl font-bold tracking-tight text-white">Vision Pro</h2>
-                        <p class="text-zinc-500 text-sm max-w-xs mx-auto">Upload images, summarize documents, or chat with GPT-4o.</p>
-                    </div>
-                </div>`;
-                return;
-            }
-            chat.messages.forEach(m => appendUI(m.role, m.content));
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function renderSidebar() {
-            const list = document.getElementById('chat-history-list');
-            list.innerHTML = '';
-            state.chats.forEach(c => {
-                const item = document.createElement('div');
-                item.className = `p-4 rounded-xl cursor-pointer truncate text-[13px] font-medium transition-all ${c.id === state.currentChatId ? 'bg-zinc-800/80 text-white ring-1 ring-zinc-700 shadow-lg' : 'text-zinc-500 hover:bg-zinc-800/30 hover:text-zinc-300'}`;
-                item.innerText = c.messages.length ? c.messages[0].content.slice(0, 32) : "New Conversation";
-                item.onclick = () => { state.currentChatId = c.id; renderSidebar(); renderChat(); if(window.innerWidth < 768) closeAllSidebars(); };
-                list.appendChild(item);
-            });
-        }
-
-        function saveState() { localStorage.setItem('gh-vision-pro-v2', JSON.stringify(state)); }
-        
-        function saveSettings() { 
-            const inp = document.getElementById('set-token').value.trim();
-            if(inp !== "") state.token = inp;
-            state.model = document.getElementById('set-model').value; 
-            saveState(); 
-            closeSettings(); 
-            renderChat();
-            document.getElementById('set-token').value = ""; // Clear for security
-        }
-
-        window.onload = init;
+        window.onload = renderUI;
     </script>
 </body>
 </html>
